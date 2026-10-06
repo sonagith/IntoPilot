@@ -1,8 +1,8 @@
 fastapi==0.141.1
 uvicorn==0.52.4
 sqlalchemy==2.0.45
-passlib==1.7.4
-bcrypt==4.3.0
+bcrypt==4.0.1
+passlib
 python-multipart==0.0.20
 apscheduler==3.11.0
 requests==2.32.5
