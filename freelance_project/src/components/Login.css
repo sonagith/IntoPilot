@@ -1,0 +1,618 @@
+/* ================= GLOBAL LAYOUT ================= */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.login-page {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden; 
+  background: #f8fafc;
+}
+
+/* ================= LEFT BRAND PANEL (DARK SIDE) ================= */
+.login-brand-panel {
+  width: 56%;
+  height: 100%;
+  background-color: #020617;
+  background-image: radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%);
+  display: flex;
+  flex-direction: column;
+  padding: 30px 48px 20px 48px; /* Bottom se thoda space banaya hai */
+  position: relative;
+  overflow: hidden;
+  color: #ffffff;
+  box-sizing: border-box;
+}
+
+/* Background Effects */
+.brand-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 0;
+}
+.brand-glow-one {
+  top: -10%;
+  left: -10%;
+  width: 400px;
+  height: 400px;
+  background: rgba(30, 58, 138, 0.4);
+}
+.brand-glow-two {
+  bottom: 0;
+  right: 0;
+  width: 500px;
+  height: 500px;
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.brand-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: space-between; /* Top, Center aur Bottom ko properly spread karega */
+}
+
+/* Brand Header */
+.company-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  margin-bottom: 15px; 
+}
+
+.company-logo-box img {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.company-brand-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.company-name {
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+.company-name span {
+  color: #facc15; 
+}
+
+.company-tagline {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  color: #cbd5e1;
+  margin-top: 1px;
+}
+
+/* Hero Content */
+.brand-main-content {
+  flex: 1; 
+  display: flex;
+  flex-direction: column;
+  min-height: 0; 
+  justify-content: center;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 4px 11px;
+  border-radius: 20px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  color: #e2e8f0;
+  width: fit-content;
+}
+
+.eyebrow-dot {
+  width: 6px;
+  height: 6px;
+  background: #facc15;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(250, 204, 21, 0.8);
+}
+
+.brand-title {
+  font-size: clamp(26px, 4.5vh, 36px); 
+  font-weight: 800;
+  line-height: 1.15;
+  margin-top: 15px;
+  letter-spacing: -0.6px;
+  flex-shrink: 0;
+}
+
+.brand-title span {
+  color: #facc15; 
+}
+
+/* AI Ecosystem Image - Yahan adjustments kiye hain image ko bada karne ke liye */
+.ai-ecosystem-wrapper {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-start; /* Image ko text ki seedh (left) me rakhega */
+  align-items: center;
+  width: 100%; 
+  flex: 1; 
+  min-height: 0; 
+}
+
+.ai-ecosystem-image {
+  width: 140%; /* Image ko bada karega taaki right side ka khali space bhare */
+  max-width: 140%; /* Stretch hone allow karega */
+  height: 100%; 
+  object-fit: contain;
+  object-position: left center; /* Sabse Zaroori: Image left se judkar rahegi aur sirf right ki taraf badhegi, isse cut nahi hogi */
+  filter: drop-shadow(0 14px 28px rgba(0,0,0,0.4));
+  /* Sabhi margin-left aur scale yahan se hata diye gaye hain */
+}
+
+/* Bottom Bar */
+.brand-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  margin-top: 20px;
+  flex-shrink: 0; 
+  z-index: 2; /* Image ke aage dikhega agar halka overlap hua toh */
+}
+
+.trust-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: #f8fafc;
+  font-weight: 500;
+}
+
+.trust-row svg {
+  color: #facc15; 
+}
+
+.brand-links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Outline aur underline issue yahan theek kiya hai */
+.brand-links a {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #f8fafc;
+  font-size: 11.5px;
+  font-weight: 500;
+  text-decoration: none !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  transition: opacity 0.2s;
+}
+
+.brand-links a:hover {
+  opacity: 0.8;
+  color: #FACC15;
+}
+
+.link-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ================= RIGHT FORM PANEL ================= */
+/* ================= RIGHT FORM PANEL ================= */
+.login-form-panel {
+  width: 44%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  
+  /* YAHAN SE CHANGE KRO (Purana background hata dena) */
+  background: linear-gradient(135deg, #FAFAF8, #FBEFD5, #ffffff);
+  background-size: 200% 200%;
+  animation: moveColor 6s ease infinite;
+  /* YAHAN TAK */
+
+  box-sizing: border-box;
+  overflow: hidden;
+}
+/* YE ANIMATION ADD KAR DO */
+
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  padding: 30px 32px;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.04), 0 5px 15px rgba(0, 0, 0, 0.02);
+  transition: box-shadow 0.3s ease;
+  box-sizing: border-box;
+}
+
+/* Login Logo */
+.login-logo-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.login-logo {
+  width: 42px;
+  height: 42px;
+  object-fit: cover;
+  border-radius: 10px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Login Header */
+.login-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.login-welcome {
+  margin-bottom: 6px;
+  color: #728A76; 
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.login-header h2 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+
+.login-header h2 span {
+  color: #728A76; 
+}
+
+.login-header p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Error */
+.login-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #ef4444;
+  font-size: 11.5px;
+  border: 1px solid #fee2e2;
+}
+
+/* Form Groups */
+.login-form-group {
+  margin-bottom: 14px;
+}
+
+.login-form-group label {
+  display: block;
+  margin-bottom: 6px;
+  color: #475569;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.login-input-wrapper {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.login-input-wrapper svg {
+  color: #94a3b8;
+}
+
+.login-input-wrapper:focus-within {
+  border-color: #728A76;
+  box-shadow: 0 0 0 3px rgba(114, 138, 118, 0.1);
+}
+
+.login-input-wrapper input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #0f172a;
+  font-size: 14px;
+}
+
+/* Submit Button */
+.login-submit {
+  width: 100%;
+  height: 44px;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: none;
+  border-radius: 10px;
+  background: #7A8F7D; 
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.login-submit:hover:not(:disabled) {
+  background: #6a7c6c;
+}
+
+.login-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.login-spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: login-spin 0.7s linear infinite;
+}
+
+@keyframes login-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Footer */
+.login-footer {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10.5px;
+}
+
+.secure-login {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #94a3b8;
+}
+
+.secure-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+.powered-by {
+  color: #94a3b8;
+}
+
+.powered-by strong {
+  color: #475569;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 992px) {
+  .login-page {
+    flex-direction: column;
+    height: auto;
+    max-height: none;
+    overflow-y: auto;
+  }
+  .login-brand-panel, .login-form-panel {
+    width: 100%;
+    height: auto;
+    min-height: 42vh;
+  }
+  .login-brand-panel {
+    overflow: visible;
+  }
+  .brand-content {
+    height: auto;
+    overflow: visible;
+  }
+  .brand-title {
+    font-size: 28px;
+  }
+}
+
+@keyframes moveColor {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ================= RIGHT FORM PANEL ================= */
+.login-form-panel {
+  width: 44%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #FAFAF8; 
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative; /* Animation mate aa jaruri chhe */
+  z-index: 1;
+}
+
+/* Floating/Movable Color Effect 1 (Tamaro aapelo color) */
+.login-form-panel::before {
+  content: "";
+  position: absolute;
+  top: -15%;
+  left: -15%;
+  width: 450px;
+  height: 450px;
+  background: #FBEFD5; 
+  border-radius: 50%;
+  filter: blur(90px);
+  z-index: -1; /* Card ni paachhal rakhva mate */
+  animation: moveGlowOne 8s infinite alternate ease-in-out;
+}
+
+/* Floating/Movable Color Effect 2 (Soft Green) */
+.login-form-panel::after {
+  content: "";
+  position: absolute;
+  bottom: -15%;
+  right: -15%;
+  width: 500px;
+  height: 500px;
+  background: rgba(122, 143, 125, 0.15); /* Thodo green tint */
+  border-radius: 50%;
+  filter: blur(90px);
+  z-index: -1;
+  animation: moveGlowTwo 10s infinite alternate ease-in-out;
+}
+
+/* Animations - Ekdam smooth movement mate */
+@keyframes moveGlowOne {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(120px, 80px) scale(1.2); }
+}
+
+@keyframes moveGlowTwo {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(-100px, -120px) scale(1.1); }
+}
+
+/* Login Card - Aa card hamesha paachhal na color thi aagal raheshe */
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  padding: 30px 32px;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.06), 0 5px 15px rgba(0, 0, 0, 0.03);
+  transition: box-shadow 0.3s ease;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 10; /* Card sabthi aagal dekhase */
+}
+
+
+/* ================= HERO TEXT TYPING ANIMATION ================= */
+.brand-title span {
+  color: #facc15; 
+  display: inline-block;
+  overflow: hidden; 
+  white-space: nowrap; 
+  /* border-right: 3px solid #facc15; Ye typing cursor hai */
+  width: 0; 
+  vertical-align: bottom;
+  
+  /* 
+    1. typing: 1.5 second me text type hoga.
+    2. blinkCursor: Cursor 0.5s ki speed se 5 baar blink karega (total 2.5s).
+    3. hideCursor: 2.4 seconds baad cursor completely gayab ho jayega.
+  */
+  animation: 
+    typing 1.5s linear forwards, 
+    blinkCursor 0.5s step-end 5, 
+    hideCursor 0.1s 2.4s forwards;
+}
+
+/* Animations */
+@keyframes typing {
+  from { width: 0; }
+  /* Yahan width 11.5em se kam karke 9.2em kar di hai jisse cursor exactly dot (.) par ruke */
+  to { width: 9.2em; } 
+}
+
+@keyframes blinkCursor {
+  from, to { border-color: transparent; }
+  50% { border-color: #facc15; }
+}
+
+@keyframes hideCursor {
+  to { border-color: transparent; }
+}
+
+
+/* ================= PAGE LOAD SPLIT ANIMATION ================= */
+
+/* Left side (Dark Brand Panel) Left se aayega */
+.login-brand-panel {
+  opacity: 0;
+  animation: slideInFromLeftPanel 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* Right side (Light Form Panel) Right se aayega */
+.login-form-panel {
+  opacity: 0;
+  animation: slideInFromRightPanel 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* Left Animation Keyframes */
+@keyframes slideInFromLeftPanel {
+  0% {
+    opacity: 0;
+    transform: translateX(-150px); /* Left ki taraf bahar rahega */
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0); /* Apni original jagah par aayega */
+  }
+}
+
+/* Right Animation Keyframes */
+@keyframes slideInFromRightPanel {
+  0% {
+    opacity: 0;
+    transform: translateX(150px); /* Right ki taraf bahar rahega */
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0); /* Apni original jagah par aayega */
+  }
+}
+
