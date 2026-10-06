@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 import os
-from sqlalchemy import text, inspect # 🔴 Inspect import kiya
+from sqlalchemy import text, inspect
 
 from db.database import engine, Base, SessionLocal
 from db import models
@@ -43,7 +43,6 @@ def startup_seed_db():
     try:
         # 1. 🔴 SAFE MIGRATION CHECK (Cross-Database) 🔴
         with engine.connect() as connection:
-            # Table aur column names nikalne ke liye cross-DB tareeka
             inspector = inspect(engine)
 
             # --- PROJECTS TABLE ---
@@ -76,6 +75,18 @@ def startup_seed_db():
                 if "national_id_doc_url" not in cols_client:
                     connection.execute(text("ALTER TABLE clients ADD COLUMN national_id_doc_url VARCHAR;"))
 
+            # --- ACTIVITY LOG TABLE CHECK (For History) ---
+            if not inspector.has_table("activity_logs"):
+                connection.execute(text("""
+                    CREATE TABLE activity_logs (
+                        id SERIAL PRIMARY KEY,
+                        plot_id INTEGER REFERENCES plots(id),
+                        date DATE,
+                        title VARCHAR,
+                        description VARCHAR
+                    );
+                """))
+
             # --- PLOTS TABLE ---
             if inspector.has_table("plots"):
                 cols_plot = [col["name"] for col in inspector.get_columns("plots")]
@@ -98,10 +109,9 @@ def startup_seed_db():
                 if "commission_balance" not in cols_plot:
                     connection.execute(text("ALTER TABLE plots ADD COLUMN commission_balance FLOAT DEFAULT 0.0;"))
                 if "assigned_staff_id" not in cols_plot:
-                    # Foreign key add directly via alter isn't always easy, safely ignored if manual migration needed
                     try:
                         connection.execute(text("ALTER TABLE plots ADD COLUMN assigned_staff_id INTEGER;"))
-                    except:
+                    except Exception:
                         pass
 
             # --- PAYMENTS TABLE ---
@@ -125,19 +135,44 @@ def startup_seed_db():
                 cols_profile = [col["name"] for col in inspector.get_columns("business_profiles")]
                 if "logo_url" not in cols_profile:
                     connection.execute(text("ALTER TABLE business_profiles ADD COLUMN logo_url VARCHAR;"))
+                    
+            # --- PLOT DOCUMENTS TABLE CHECK ---
+            if not inspector.has_table("plot_documents"):
+                connection.execute(text("""
+                    CREATE TABLE plot_documents (
+                        id SERIAL PRIMARY KEY,
+                        plot_id INTEGER REFERENCES plots(id),
+                        document_name VARCHAR,
+                        document_url VARCHAR
+                    );
+                """))
 
             connection.commit()
         print("🛡️ All Tables Safely Verified & Migrated!")
 
-        # 2. Default Admin User
-        user = db.query(models.User).filter(models.User.email == "aosaf@greenvalleygroup.com").first()
+        # 2. Default Admin User (Forced Update for Fix)
+        target_email = "aosaf@greenvalleygroup.com"
+        target_password = "aosaf@123"
+        hashed_pw = get_password_hash(target_password)
+
+        user = db.query(models.User).filter(models.User.email == target_email).first()
+        
         if not user:
-            hashed_pw = get_password_hash("aosaf@123")
-            # Yaha mistake thi "aosaf@greenvalleygroup" likha tha pehle bina .com ke
-            new_user = models.User(email="aosaf@greenvalleygroup.com", hashed_password=hashed_pw)
+            # Puraana galat format wala email hatane ke liye
+            old_user = db.query(models.User).filter(models.User.email == "aosaf@greenvalleygroup").first()
+            if old_user:
+                db.delete(old_user)
+                db.commit()
+            
+            new_user = models.User(email=target_email, hashed_password=hashed_pw)
             db.add(new_user)
             db.commit()
-            print("✅ Default Admin Created!")
+            print("✅ Default Admin Created Freshly!")
+        else:
+            # 🔴 YEH LINE CORRUPTED PASSWORD KO THEEK KAREGI 🔴
+            user.hashed_password = hashed_pw
+            db.commit()
+            print("✅ Default Admin Password Force Updated!")
 
         # 3. Default Profile
         profile = db.query(models.BusinessProfile).first()
