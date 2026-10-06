@@ -4,18 +4,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 import os
-from sqlalchemy import text
+from sqlalchemy import text, inspect # 🔴 Inspect import kiya
 
 from db.database import engine, Base, SessionLocal
 from db import models
 from core.security import get_password_hash
 from api.routes import auth, clients, payments, dashboard, settings
 
-# 🔴 AUTOMATION SCHEDULER IMPORTS 🔴
+# AUTOMATION SCHEDULER IMPORTS
 from apscheduler.schedulers.background import BackgroundScheduler
 from core.automation import run_daily_reminders
 
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all ko safely handle karne ke liye
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    print(f"Schema creation issue (often ignorable): {e}")
 
 app = FastAPI(title="IntoPilot Secure API")
 
@@ -29,7 +33,7 @@ app.add_middleware(
 
 # Image Uploads Directory Create & Mount
 os.makedirs("uploads/receipts", exist_ok=True)
-os.makedirs("uploads/documents", exist_ok=True) # 🔴 NAYA FOLDER DOCUMENTS KE LIYE
+os.makedirs("uploads/documents", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.on_event("startup")
@@ -37,114 +41,90 @@ def startup_seed_db():
     db = SessionLocal()
     print("🚀 Running Database Seed & Migration Check...")
     try:
-        # 1. 🔴 SAFE MIGRATION CHECK FOR ALL TABLES (No DB Deletion Needed) 🔴
+        # 1. 🔴 SAFE MIGRATION CHECK (Cross-Database) 🔴
         with engine.connect() as connection:
+            # Table aur column names nikalne ke liye cross-DB tareeka
+            inspector = inspect(engine)
+
             # --- PROJECTS TABLE ---
-            res_proj = connection.execute(text("PRAGMA table_info(projects);"))
-            cols_proj = [row[1] for row in res_proj.fetchall()]
-            if "location" not in cols_proj:
-                connection.execute(text("ALTER TABLE projects ADD COLUMN location VARCHAR DEFAULT 'India';"))
-            if "plotPrefix" not in cols_proj:
-                connection.execute(text("ALTER TABLE projects ADD COLUMN plotPrefix VARCHAR DEFAULT 'P';"))
-            if "targetClients" not in cols_proj:
-                connection.execute(text("ALTER TABLE projects ADD COLUMN targetClients INTEGER DEFAULT 100;"))
+            if inspector.has_table("projects"):
+                cols_proj = [col["name"] for col in inspector.get_columns("projects")]
+                if "location" not in cols_proj:
+                    connection.execute(text("ALTER TABLE projects ADD COLUMN location VARCHAR DEFAULT 'India';"))
+                if "plotPrefix" not in cols_proj:
+                    connection.execute(text("ALTER TABLE projects ADD COLUMN plotPrefix VARCHAR DEFAULT 'P';"))
+                if "targetClients" not in cols_proj:
+                    connection.execute(text("ALTER TABLE projects ADD COLUMN targetClients INTEGER DEFAULT 100;"))
 
-            # --- CLIENTS TABLE (KYC Fields) ---
-            res_client = connection.execute(text("PRAGMA table_info(clients);"))
-            cols_client = [row[1] for row in res_client.fetchall()]
-            if "email" not in cols_client:
-                connection.execute(text("ALTER TABLE clients ADD COLUMN email VARCHAR;"))
-            if "pan_card" not in cols_client:
-                connection.execute(text("ALTER TABLE clients ADD COLUMN pan_card VARCHAR;"))
-            if "aadhaar_card" not in cols_client:
-                connection.execute(text("ALTER TABLE clients ADD COLUMN aadhaar_card VARCHAR;"))
-            if "address" not in cols_client:
-                connection.execute(text("ALTER TABLE clients ADD COLUMN address VARCHAR;"))
+            # --- CLIENTS TABLE ---
+            if inspector.has_table("clients"):
+                cols_client = [col["name"] for col in inspector.get_columns("clients")]
+                if "email" not in cols_client:
+                    connection.execute(text("ALTER TABLE clients ADD COLUMN email VARCHAR;"))
+                if "pan_card" not in cols_client:
+                    connection.execute(text("ALTER TABLE clients ADD COLUMN pan_card VARCHAR;"))
+                if "aadhaar_card" not in cols_client:
+                    connection.execute(text("ALTER TABLE clients ADD COLUMN aadhaar_card VARCHAR;"))
+                if "address" not in cols_client:
+                    connection.execute(text("ALTER TABLE clients ADD COLUMN address VARCHAR;"))
+                if "national_id" not in cols_client:
+                    connection.execute(text("ALTER TABLE clients ADD COLUMN national_id VARCHAR;"))
+                if "pan_doc_url" not in cols_client:
+                    connection.execute(text("ALTER TABLE clients ADD COLUMN pan_doc_url VARCHAR;"))
+                if "aadhaar_doc_url" not in cols_client:
+                    connection.execute(text("ALTER TABLE clients ADD COLUMN aadhaar_doc_url VARCHAR;"))
+                if "national_id_doc_url" not in cols_client:
+                    connection.execute(text("ALTER TABLE clients ADD COLUMN national_id_doc_url VARCHAR;"))
 
+            # --- PLOTS TABLE ---
+            if inspector.has_table("plots"):
+                cols_plot = [col["name"] for col in inspector.get_columns("plots")]
+                if "due_date" not in cols_plot:
+                    connection.execute(text("ALTER TABLE plots ADD COLUMN due_date DATE;"))
+                if "survey_number" not in cols_plot:
+                    connection.execute(text("ALTER TABLE plots ADD COLUMN survey_number VARCHAR;"))
+                if "facing" not in cols_plot:
+                    connection.execute(text("ALTER TABLE plots ADD COLUMN facing VARCHAR;"))
+                if "agreement_no" not in cols_plot:
+                    connection.execute(text("ALTER TABLE plots ADD COLUMN agreement_no VARCHAR;"))
+                if "registration_status" not in cols_plot:
+                    connection.execute(text("ALTER TABLE plots ADD COLUMN registration_status VARCHAR DEFAULT 'Pending';"))
+                if "commission_per_sqft" not in cols_plot:
+                    connection.execute(text("ALTER TABLE plots ADD COLUMN commission_per_sqft FLOAT DEFAULT 0.0;"))
+                if "total_commission" not in cols_plot:
+                    connection.execute(text("ALTER TABLE plots ADD COLUMN total_commission FLOAT DEFAULT 0.0;"))
+                if "commission_paid_amount" not in cols_plot:
+                    connection.execute(text("ALTER TABLE plots ADD COLUMN commission_paid_amount FLOAT DEFAULT 0.0;"))
+                if "commission_balance" not in cols_plot:
+                    connection.execute(text("ALTER TABLE plots ADD COLUMN commission_balance FLOAT DEFAULT 0.0;"))
+                if "assigned_staff_id" not in cols_plot:
+                    # Foreign key add directly via alter isn't always easy, safely ignored if manual migration needed
+                    try:
+                        connection.execute(text("ALTER TABLE plots ADD COLUMN assigned_staff_id INTEGER;"))
+                    except:
+                        pass
 
-            # 🔴 NAYE KYC UPLOADS AUR NATIONAL ID COLUMNS 🔴
-            if "national_id" not in cols_client:
-                connection.execute(text("ALTER TABLE clients ADD COLUMN national_id VARCHAR;"))
-            if "pan_doc_url" not in cols_client:
-                connection.execute(text("ALTER TABLE clients ADD COLUMN pan_doc_url VARCHAR;"))
-            if "aadhaar_doc_url" not in cols_client:
-                connection.execute(text("ALTER TABLE clients ADD COLUMN aadhaar_doc_url VARCHAR;"))
-            if "national_id_doc_url" not in cols_client:
-                connection.execute(text("ALTER TABLE clients ADD COLUMN national_id_doc_url VARCHAR;"))
+            # --- PAYMENTS TABLE ---
+            if inspector.has_table("payments"):
+                cols_pay = [col["name"] for col in inspector.get_columns("payments")]
+                if "bank_name" not in cols_pay:
+                    connection.execute(text("ALTER TABLE payments ADD COLUMN bank_name VARCHAR;"))
+                if "received_date" not in cols_pay:
+                    connection.execute(text("ALTER TABLE payments ADD COLUMN received_date DATE;"))
+                if "booked_by" not in cols_pay:
+                    connection.execute(text("ALTER TABLE payments ADD COLUMN booked_by VARCHAR;"))
 
-            # --- ACTIVITY LOG TABLE CHECK (For History) ---
-            try:
-                connection.execute(text("SELECT 1 FROM activity_logs LIMIT 1;"))
-            except Exception:
-                connection.execute(text("""
-                    CREATE TABLE IF NOT EXISTS activity_logs (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        plot_id INTEGER REFERENCES plots(id),
-                        date DATE,
-                        title VARCHAR,
-                        description VARCHAR
-                    );
-                """))
+            # --- STAFF TABLE ---
+            if inspector.has_table("staff"):
+                cols_staff = [col["name"] for col in inspector.get_columns("staff")]
+                if "email" not in cols_staff:
+                    connection.execute(text("ALTER TABLE staff ADD COLUMN email VARCHAR DEFAULT 'staff@intopilot.in';"))
 
-            # --- PLOTS TABLE (Commission, Dates, Staff) ---
-            res_plot = connection.execute(text("PRAGMA table_info(plots);"))
-            cols_plot = [row[1] for row in res_plot.fetchall()]
-            if "due_date" not in cols_plot:
-                connection.execute(text("ALTER TABLE plots ADD COLUMN due_date DATE;"))
-            if "survey_number" not in cols_plot:
-                connection.execute(text("ALTER TABLE plots ADD COLUMN survey_number VARCHAR;"))
-            if "facing" not in cols_plot:
-                connection.execute(text("ALTER TABLE plots ADD COLUMN facing VARCHAR;"))
-            if "agreement_no" not in cols_plot:
-                connection.execute(text("ALTER TABLE plots ADD COLUMN agreement_no VARCHAR;"))
-            if "registration_status" not in cols_plot:
-                connection.execute(text("ALTER TABLE plots ADD COLUMN registration_status VARCHAR DEFAULT 'Pending';"))
-            if "commission_per_sqft" not in cols_plot:
-                connection.execute(text("ALTER TABLE plots ADD COLUMN commission_per_sqft FLOAT DEFAULT 0.0;"))
-            if "total_commission" not in cols_plot:
-                connection.execute(text("ALTER TABLE plots ADD COLUMN total_commission FLOAT DEFAULT 0.0;"))
-            if "commission_paid_amount" not in cols_plot:
-                connection.execute(text("ALTER TABLE plots ADD COLUMN commission_paid_amount FLOAT DEFAULT 0.0;"))
-            if "commission_balance" not in cols_plot:
-                connection.execute(text("ALTER TABLE plots ADD COLUMN commission_balance FLOAT DEFAULT 0.0;"))
-            if "assigned_staff_id" not in cols_plot:
-                connection.execute(text("ALTER TABLE plots ADD COLUMN assigned_staff_id INTEGER REFERENCES staff(id);"))
-
-            # --- PAYMENTS TABLE (Bank details) ---
-            res_pay = connection.execute(text("PRAGMA table_info(payments);"))
-            cols_pay = [row[1] for row in res_pay.fetchall()]
-            if "bank_name" not in cols_pay:
-                connection.execute(text("ALTER TABLE payments ADD COLUMN bank_name VARCHAR;"))
-            if "received_date" not in cols_pay:
-                connection.execute(text("ALTER TABLE payments ADD COLUMN received_date DATE;"))
-            if "booked_by" not in cols_pay:
-                connection.execute(text("ALTER TABLE payments ADD COLUMN booked_by VARCHAR;"))
-
-            # --- STAFF TABLE (Missing Email Fix) ---
-            res_staff = connection.execute(text("PRAGMA table_info(staff);"))
-            cols_staff = [row[1] for row in res_staff.fetchall()]
-            if "email" not in cols_staff:
-                connection.execute(text("ALTER TABLE staff ADD COLUMN email VARCHAR DEFAULT 'staff@intopilot.in';"))
-
-            # 🔴 --- BUSINESS PROFILES TABLE (Logo Field Fix) --- 🔴
-            res_profile = connection.execute(text("PRAGMA table_info(business_profiles);"))
-            cols_profile = [row[1] for row in res_profile.fetchall()]
-            if "logo_url" not in cols_profile:
-                connection.execute(text("ALTER TABLE business_profiles ADD COLUMN logo_url VARCHAR;"))
-                
-            # 🔴 --- PLOT DOCUMENTS TABLE CHECK --- 🔴
-            try:
-                connection.execute(text("SELECT 1 FROM plot_documents LIMIT 1;"))
-            except Exception:
-                # Agar table nahi hai toh create kar lo (SQLite syntax)
-                connection.execute(text("""
-                    CREATE TABLE IF NOT EXISTS plot_documents (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        plot_id INTEGER REFERENCES plots(id),
-                        document_name VARCHAR,
-                        document_url VARCHAR
-                    );
-                """))
+            # --- BUSINESS PROFILES TABLE ---
+            if inspector.has_table("business_profiles"):
+                cols_profile = [col["name"] for col in inspector.get_columns("business_profiles")]
+                if "logo_url" not in cols_profile:
+                    connection.execute(text("ALTER TABLE business_profiles ADD COLUMN logo_url VARCHAR;"))
 
             connection.commit()
         print("🛡️ All Tables Safely Verified & Migrated!")
@@ -153,9 +133,11 @@ def startup_seed_db():
         user = db.query(models.User).filter(models.User.email == "aosaf@greenvalleygroup.com").first()
         if not user:
             hashed_pw = get_password_hash("aosaf@123")
-            new_user = models.User(email="aosaf@greenvalleygroup", hashed_password=hashed_pw)
+            # Yaha mistake thi "aosaf@greenvalleygroup" likha tha pehle bina .com ke
+            new_user = models.User(email="aosaf@greenvalleygroup.com", hashed_password=hashed_pw)
             db.add(new_user)
             db.commit()
+            print("✅ Default Admin Created!")
 
         # 3. Default Profile
         profile = db.query(models.BusinessProfile).first()
@@ -192,7 +174,7 @@ def startup_seed_db():
                 db.add(models.Integration(**d))
             db.commit()
 
-        # 6. Default Templates (AI Voice Call Hidden)
+        # 6. Default Templates
         templates = db.query(models.MessageTemplate).first()
         if not templates:
             defaults_tmpl = [
@@ -230,16 +212,16 @@ def startup_seed_db():
     finally:
         db.close()
 
-    # 🔴 SCHEDULER START KAREIN 🔴
+    # SCHEDULER START
     try:
         print("⏰ Starting Background Scheduler (Runs on 18th of every month at 11:50 PM)...")
         scheduler = BackgroundScheduler()
-        # day=18, hour=23 (11 PM), minute=50
         scheduler.add_job(run_daily_reminders, 'cron', day=18, hour=23, minute=50)
         scheduler.start()
     except Exception as e:
         print(f"⚠️ Scheduler start error: {e}")
 
+# Routes
 app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(clients.router, prefix="/api/clients", tags=["Clients"])
 app.include_router(payments.router, prefix="/api/payments", tags=["Payments"])
