@@ -1,5 +1,7 @@
 // src/services/api.ts
-export const API_URL = "http://127.0.0.1:8000";
+// export const API_URL = "http://127.0.0.1:8000";
+export const API_URL = "https://intopilot.onrender.com";
+
 // export const API_URL = "https://my-backend-mqrz.onrender.com";
 
 export const getAuthToken = () => {
